@@ -16,6 +16,8 @@ Uses ReportLab and Pandas.
 
 ## Usage
 
+As as a script:
+
 `products.csv`:
 
 ```
@@ -41,3 +43,15 @@ PVDF KYNAR
 ```shell
 barcodes products.csv labels.pdf -l logo.png
 ```
+
+Or as a web application:
+
+```shell
+FLASK_APP=barcodes.webapp flask run
+open http://localhost:5000
+
+# or for development
+FLASK_APP=barcodes.webapp FLASK_DEBUG=True flask run
+```
+
+You can fill in the CSV into a text area nad generate a PDF.

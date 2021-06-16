@@ -7,7 +7,7 @@ from barcodes import generate_pdf, generate_values_from_csv
 
 app = Flask(__name__)
 
-logo_path = os.path.join(os.path.dirname(__file__), '..', '..', 'prototype', 's3dt-logo-en-black-on-white-800-240.png')
+logo_path = os.path.join(os.path.dirname(__file__), '..', 'logo.png')
 
 
 @app.route('/')

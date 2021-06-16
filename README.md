@@ -15,7 +15,7 @@ Uses ReportLab and Pandas.
 `products.csv`:
 
 ```
-ean,stickers remaining,sticker name
+ean,count,description
 8594199700121,20,"3DXTECH
 3DXSTAT
 ESD PLA

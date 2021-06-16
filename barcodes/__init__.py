@@ -17,9 +17,9 @@ def generate_values_from_df(df):
     eans = []
     texts = []
     for i, row in df.iterrows():
-        count = row['stickers remaining']
+        count = row['count']
         eans.extend(count * [row['ean']])
-        texts.extend(count * [row['sticker name']])
+        texts.extend(count * [row['description']])
 
     return eans, texts
 

@@ -1,4 +1,4 @@
-import pandas as pd
+import csv
 from reportlab.graphics.barcode import eanbc
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.pagesizes import A4
@@ -8,16 +8,17 @@ from reportlab.graphics import renderPDF
 
 
 def labels_csv_to_pdf(csv_path, pdf_path, logo_path):
-    df = pd.read_csv(csv_path)
-    eans, texts = generate_values_from_df(df)
+    with open(csv_path) as csv_file:
+        eans, texts = generate_values_from_csv(csv_file)
     generate_pdf(eans, texts, pdf_path, logo_path)
 
 
-def generate_values_from_df(df):
+def generate_values_from_csv(csv_file):
+    reader = csv.DictReader(csv_file)
     eans = []
     texts = []
-    for i, row in df.iterrows():
-        count = row['count']
+    for row in reader:
+        count = int(row['count'])
         eans.extend(count * [row['ean']])
         texts.extend(count * [row['description']])
 

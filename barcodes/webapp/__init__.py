@@ -1,10 +1,9 @@
 from datetime import datetime
 import os
 from io import StringIO, BytesIO
-import pandas as pd
 from flask import Flask, render_template, request, make_response
 
-from barcodes import generate_values_from_df, generate_pdf
+from barcodes import generate_pdf, generate_values_from_csv
 
 app = Flask(__name__)
 
@@ -18,10 +17,9 @@ def index():
 
 @app.route('/pdf', methods=['POST'])
 def pdf():
-    csv_str = request.form['products']
+    csv_str = request.form['products'].strip()
     with StringIO(csv_str) as csv_file:
-        df = pd.read_csv(csv_file)
-    eans, texts = generate_values_from_df(df)
+        eans, texts = generate_values_from_csv(csv_file)
 
     with BytesIO() as pdf_file:
         generate_pdf(eans, texts, pdf_file, logo_path)

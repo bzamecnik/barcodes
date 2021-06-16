@@ -1,6 +1,10 @@
 # Barcodes
 
-A service to lay out product barcodes to PDF.
+A script to lay out product barcodes from a CSv to a PDF.
+
+It lays out 21 (8x3) stickers per each A4 page.
+
+There can be an EAN13 code, 4 lines of short description and a logo.
 
 ## Installation
 

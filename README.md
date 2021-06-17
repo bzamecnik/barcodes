@@ -12,7 +12,7 @@ There can be an EAN13 code, up to 4 lines of short description and a logo.
 pip install .
 ```
 
-Uses ReportLab and Pandas.
+Uses ReportLab.
 
 ## Usage
 
@@ -58,8 +58,24 @@ You can fill in the CSV into a text area nad generate a PDF.
 
 ### Docker
 
+Building and running for development.
+
 ```shell
 docker build . -t barcodes
 docker volume create barcodes-db
 docker run --rm -it -p 5000:5000 -v barcodes-db:/data barcodes
+```
+
+Building, publishing and running for production.
+
+```shell
+VERSION=0.0.1
+docker build . -t bzamecnik/barcodes:$VERSION
+docker push bzamecnik/barcodes:$VERSION
+
+# production:
+# create volume once
+docker volume create barcodes-db
+docker pull bzamecnik/barcodes:$VERSION
+docker run -d --restart on-failure:10 -p 5000:5000 -v barcodes-db:/data --name barcodes bzamecnik/barcodes:$VERSION
 ```

@@ -60,5 +60,6 @@ You can fill in the CSV into a text area nad generate a PDF.
 
 ```shell
 docker build . -t barcodes
-docker run --rm -it -p 5000:5000 barcodes
+docker volume create barcodes-db
+docker run --rm -it -p 5000:5000 -v barcodes-db:/data barcodes
 ```

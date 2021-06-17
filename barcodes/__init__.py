@@ -14,13 +14,16 @@ def labels_csv_to_pdf(csv_path, pdf_path, logo_path):
 
 
 def generate_values_from_csv(csv_file):
-    reader = csv.DictReader(csv_file)
+    return generate_values(csv.DictReader(csv_file))
+
+
+def generate_values(products):
     eans = []
     texts = []
-    for row in reader:
-        count = int(row['count'])
-        eans.extend(count * [row['ean']])
-        texts.extend(count * [row['description']])
+    for product in products:
+        count = int(product['count'])
+        eans.extend(count * [product['ean']])
+        texts.extend(count * [product['description']])
 
     return eans, texts
 

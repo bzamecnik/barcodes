@@ -59,7 +59,7 @@ def pdf():
     file_name = f'barcodes_{now}.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = \
-        f'inline; filename={file_name}.pdf'
+        f'inline; filename={file_name}'
 
     return response
 

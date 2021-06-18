@@ -21,7 +21,7 @@ def generate_values(products):
     eans = []
     texts = []
     for product in products:
-        count = int(product['count'])
+        count = int(product['count'] or 0)
         eans.extend(count * [product['ean']])
         texts.extend(count * [product['description']])
 

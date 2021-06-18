@@ -44,8 +44,8 @@ def index():
 @app.route('/pdf', methods=['POST'])
 def pdf():
     products = Product.query.order_by(asc(Product.id)).all()
-    counts = request.form.getlist('count')
-    product_ids = request.form.getlist('product_id')
+    counts = [int(c or 0) for c in request.form.getlist('count')]
+    product_ids = [int(p) for p in request.form.getlist('product_id')]
     counts = [c for _, c in sorted(zip(product_ids, counts))]
     counted_products = sorted(
         [{'ean': p.ean, 'description': p.description, 'count': count} for p, count in zip(products, counts)],

@@ -1,6 +1,7 @@
+import csv
 from datetime import datetime
 import os
-from io import BytesIO
+from io import BytesIO, StringIO
 from flask import Flask, render_template, redirect, request, make_response, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc
@@ -84,3 +85,22 @@ def delete_product(id):
     db.session.delete(product)
     db.session.commit()
     return redirect(url_for('list_products'))
+
+
+@app.route('/products/csv', methods=['GET'])
+def export_csv():
+    products = Product.query.order_by(asc(Product.ean)).all()
+    with StringIO() as csv_file:
+        writer = csv.DictWriter(csv_file, ['ean', 'description'])
+        writer.writeheader()
+        for product in products:
+            writer.writerow({'ean': product.ean, 'description': product.description})
+        response = make_response(csv_file.getvalue())
+
+    now = datetime.now().strftime('%Y%m%d_%H%M%S')
+    file_name = f'barcodes_{now}.csv'
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = \
+        f'inline; filename={file_name}'
+
+    return response

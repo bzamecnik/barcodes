@@ -2,7 +2,9 @@ import csv
 from datetime import datetime
 import os
 from io import BytesIO, StringIO
-from flask import Flask, render_template, redirect, request, make_response, url_for
+from sqlite3 import IntegrityError
+
+from flask import Flask, render_template, redirect, request, make_response, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc
 
@@ -73,8 +75,11 @@ def list_products():
 
 @app.route('/products/new', methods=['POST'])
 def add_product():
-    product = Product(**{key: request.form[key] for key in ['ean', 'description']})
-    db.session.add(product)
+    """Add or edit product (it there's already the same EAN)."""
+    product = Product.query.filter_by(ean=request.form['ean']).first()
+    product_id = product.id if product else None
+    product = Product(id=product_id, **{key: request.form[key] for key in ['ean', 'description']})
+    db.session.merge(product)
     db.session.commit()
     return redirect(url_for('list_products'))
 

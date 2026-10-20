@@ -1,6 +1,36 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "barcodes"
+version = "0.2.0"
+description = "Generate product barcode stickers to PDF."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Bohumir Zamecnik", email = "bohumir.zamecnik@gmail.com" }]
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "flask>=3.1",
+    "flask-sqlalchemy>=3.1",
+    "reportlab>=4.0",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/bzamecnik/barcodes/issues"
+Homepage = "https://github.com/bzamecnik/barcodes"
+
+[project.scripts]
+barcodes = "barcodes.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["barcodes*"]
+
+[tool.setuptools.package-data]
+barcodes = ["logo.png"]
+"barcodes.webapp" = ["templates/*.html"]

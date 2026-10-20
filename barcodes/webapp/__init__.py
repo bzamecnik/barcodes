@@ -86,7 +86,7 @@ def add_product():
 
 @app.route('/products/delete/<id>', methods=['GET'])
 def delete_product(id):
-    product = Product.query.get(id)
+    product = db.session.get(Product, id)
     db.session.delete(product)
     db.session.commit()
     return redirect(url_for('list_products'))

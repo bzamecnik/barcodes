@@ -1,4 +1,6 @@
 import csv
+import os.path
+
 from reportlab.graphics.barcode import eanbc
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.pagesizes import A4
@@ -77,11 +79,12 @@ def generate_pdf(eans, texts, path, logo_path, page_size=A4, show_border=False):
         img_height = 0.7 * cm
         img_width = 400 / 120 * img_height
         img_bottom = y_size - img_height - (y_size - code_height) / 2
-        canvas.drawImage(logo_path,
-                         code_width + 2 * mm,
-                         img_bottom,
-                         width=img_width,
-                         height=img_height)
+        if logo_path and os.path.exists(logo_path):
+            canvas.drawImage(logo_path,
+                             code_width + 2 * mm,
+                             img_bottom,
+                             width=img_width,
+                             height=img_height)
 
         textobject = canvas.beginText()
         textobject.setTextOrigin(code_width + 2 * mm, img_bottom - 5 * mm)

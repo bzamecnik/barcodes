@@ -1,20 +1,30 @@
+import argparse
 import csv
 from datetime import datetime
 import os
+import webbrowser
 from io import BytesIO, StringIO
+from threading import Timer
 from sqlite3 import IntegrityError
 
 from flask import Flask, render_template, redirect, request, make_response, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc
 
-import barcodes
+from platformdirs import user_data_dir
+
 from barcodes import generate_pdf, generate_values
 
-db_dir = os.path.abspath(os.path.dirname(barcodes.__file__))
+
+def default_database_uri():
+    """SQLite file in the per-user data dir (~/Library/Application Support/barcodes on a Mac)."""
+    data_dir = user_data_dir('barcodes')
+    os.makedirs(data_dir, exist_ok=True)
+    return f'sqlite:///{os.path.join(data_dir, "barcodes.db")}'
+
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', f'sqlite:///{db_dir}/barcodes.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI') or default_database_uri()
 db = SQLAlchemy()
 
 logo_path = os.path.join(os.path.dirname(__file__), '..', 'logo.png')
@@ -109,3 +119,19 @@ def export_csv():
         f'inline; filename={file_name}'
 
     return response
+
+
+def main():
+    """Run the web app locally and open it in the browser."""
+    parser = argparse.ArgumentParser('barcodes-web', description='Run the barcodes web app.')
+    parser.add_argument('--host', default='127.0.0.1')
+    # not 5000, it's taken by AirPlay Receiver on macOS
+    parser.add_argument('--port', type=int, default=5001)
+    parser.add_argument('--no-browser', action='store_true')
+    args = parser.parse_args()
+
+    url = f'http://{args.host}:{args.port}/'
+    if not args.no_browser:
+        Timer(1.0, webbrowser.open, args=[url]).start()
+    print(f'Barcodes running at {url} (stop with Ctrl+C)')
+    app.run(host=args.host, port=args.port)

@@ -5,6 +5,7 @@ from reportlab.graphics.barcode import eanbc
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm, cm
+from reportlab.pdfbase.pdfmetrics import getAscent
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.graphics import renderPDF
 
@@ -79,16 +80,25 @@ def generate_pdf(eans, texts, path, logo_path, page_size=A4, show_border=False):
         img_height = 0.7 * cm
         img_width = 400 / 120 * img_height
         img_bottom = y_size - img_height - (y_size - code_height) / 2
-        if logo_path and os.path.exists(logo_path):
+        has_logo = bool(logo_path) and os.path.exists(logo_path)
+        if has_logo:
             canvas.drawImage(logo_path,
                              code_width + 2 * mm,
                              img_bottom,
                              width=img_width,
                              height=img_height)
 
+        font_name, font_size = "Helvetica", 9
+        if has_logo:
+            text_baseline = img_bottom - 5 * mm
+        else:
+            # align the top of the first line with the top of the bars
+            bars_top = (y_size - code_height) / 2 + barcode_eanbc13.barHeight
+            text_baseline = bars_top - getAscent(font_name, font_size)
+
         textobject = canvas.beginText()
-        textobject.setTextOrigin(code_width + 2 * mm, img_bottom - 5 * mm)
-        textobject.setFont("Helvetica", 9)
+        textobject.setTextOrigin(code_width + 2 * mm, text_baseline)
+        textobject.setFont(font_name, font_size)
         textobject.textLines(text.strip())
         canvas.drawText(textobject)
 

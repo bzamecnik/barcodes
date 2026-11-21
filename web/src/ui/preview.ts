@@ -1,6 +1,7 @@
 // Live PDF preview of the stickers with download and print links, and the
 // options affecting the printout.
 
+import { t } from '../i18n.ts';
 import { generatePdf, LABELS_PER_PAGE } from '../labels.ts';
 import { labelsToPrint, type State, type Store } from '../store.ts';
 import { byId, debounce, h, icon } from './dom.ts';
@@ -19,8 +20,8 @@ export function setupPreview(store: Store): void {
   const showBorder = byId<HTMLInputElement>('show-border');
   let url: string | null = null;
 
-  openLink.replaceChildren(icon(icons.printer), 'Open to print');
-  downloadLink.replaceChildren(icon(icons.download), 'Download PDF');
+  openLink.replaceChildren(icon(icons.printer), t.openToPrint);
+  downloadLink.replaceChildren(icon(icons.download), t.downloadPdf);
 
   function setEnabled(enabled: boolean): void {
     for (const link of [openLink, downloadLink]) {
@@ -54,7 +55,7 @@ export function setupPreview(store: Store): void {
       blob = doc.output('blob');
     } catch (e) {
       showEmpty([
-        h('p', { class: 'error' }, h('strong', {}, 'Could not create the PDF')),
+        h('p', { class: 'error' }, h('strong', {}, t.pdfFailed)),
         h('p', { class: 'muted' }, e instanceof Error ? e.message : String(e)),
       ]);
       return;
@@ -100,12 +101,12 @@ const COLUMNS = 3;
 export function setupStartPicker(store: Store): void {
   const container = byId('start-picker');
   const summaryText = h('span', {});
-  const grid = h('div', { class: 'sheet-map', attrs: { role: 'group', 'aria-label': 'First free sticker' } });
+  const grid = h('div', { class: 'sheet-map', attrs: { role: 'group', 'aria-label': t.firstFreeSticker } });
   const details = h('details', { class: 'start-picker' },
     h('summary', { class: 'btn' }, icon(icons.grid), summaryText),
     h('div', { class: 'popover' },
-      h('p', {}, h('strong', {}, 'Partially used sheet?')),
-      h('p', { class: 'muted' }, 'Click the first free sticker. Printing starts there.'),
+      h('p', {}, h('strong', {}, t.partiallyUsedSheet)),
+      h('p', { class: 'muted' }, t.partiallyUsedHint),
       grid));
   container.replaceChildren(details);
 
@@ -114,7 +115,7 @@ export function setupStartPicker(store: Store): void {
     return h('button', {
       type: 'button',
       class: 'sheet-cell',
-      title: `Start at sticker ${position} (row ${Math.floor(i / COLUMNS) + 1}, column ${(i % COLUMNS) + 1})`,
+      title: t.startAtSticker(position, Math.floor(i / COLUMNS) + 1, (i % COLUMNS) + 1),
       on: {
         click: () => {
           store.update((s) => ({ ...s, settings: { ...s.settings, startPosition: position } }));
@@ -126,7 +127,7 @@ export function setupStartPicker(store: Store): void {
   grid.replaceChildren(...cells);
 
   function render(start: number): void {
-    summaryText.textContent = start === 1 ? 'New sheet' : `Start at ${start}`;
+    summaryText.textContent = start === 1 ? t.newSheet : t.startAt(start);
     details.classList.toggle('active', start !== 1);
     cells.forEach((cell, i) => {
       cell.classList.toggle('used', i + 1 < start);

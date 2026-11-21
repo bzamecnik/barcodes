@@ -5,6 +5,8 @@
 // Store notifies subscribers about the change.
 
 import { validateEan } from './ean13.ts';
+import type { LanguageSetting } from './i18n.ts';
+import { t } from './i18n.ts';
 import { LABELS_PER_PAGE, type Label } from './labels.ts';
 
 export interface Product {
@@ -21,6 +23,8 @@ export interface Settings {
   showBorder: boolean;
   /** 1-based index of the first sticker to use on the first sheet */
   startPosition: number;
+  /** language of the UI, 'auto' follows the browser */
+  language: LanguageSetting;
 }
 
 export interface State {
@@ -40,7 +44,7 @@ export function emptyState(): State {
   return {
     products: [],
     counts: {},
-    settings: { logo: null, logoName: null, showBorder: false, startPosition: 1 },
+    settings: { logo: null, logoName: null, showBorder: false, startPosition: 1, language: 'auto' },
     lastChange: null,
     lastBackup: null,
   };
@@ -70,10 +74,10 @@ function checkInput(state: State, input: ProductInput, exceptId?: string): Produ
   const v = validateEan(input.ean);
   if (!v.ok) throw new ProductError(v.error);
   const description = normalizeDescription(input.description);
-  if (!description) throw new ProductError('Description is empty');
+  if (!description) throw new ProductError(t.descriptionEmpty);
   const duplicate = state.products.find((p) => p.ean === v.code && p.id !== exceptId);
   if (duplicate) {
-    throw new ProductError(`EAN ${v.code} already exists: ${firstLine(duplicate.description)}`);
+    throw new ProductError(t.eanExists(v.code, firstLine(duplicate.description)));
   }
   return { ean: v.code, description };
 }
@@ -243,6 +247,7 @@ export function parseState(raw: unknown): State {
   const settings = { ...base.settings, ...(r.settings ?? {}) };
   settings.startPosition = Math.min(LABELS_PER_PAGE, Math.max(1, Math.floor(Number(settings.startPosition) || 1)));
   settings.showBorder = !!settings.showBorder;
+  if (!(['auto', 'en', 'cs'] as unknown[]).includes(settings.language)) settings.language = 'auto';
   return {
     products,
     counts,

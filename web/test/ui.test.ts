@@ -224,4 +224,41 @@ describe('app', () => {
     await chooseFile('#backup-file', 'other.json', '{"x": 1}');
     expect($('#restore-result').textContent).toMatch(/not a backup file/);
   });
+
+  it('speaks Czech when the browser prefers it, and the language can be changed', async () => {
+    Object.defineProperty(navigator, 'languages', { value: ['cs-CZ', 'en'], configurable: true });
+    try {
+      await loadApp();
+      expect(document.documentElement.lang).toBe('cs');
+      expect(document.title).toBe('Čárové kódy');
+      expect($('#products-title').textContent).toBe('Produkty');
+      expect($('#search').getAttribute('placeholder')).toBe('Hledat nebo naskenovat EAN');
+      expect($('#list-empty').textContent).toMatch(/Seznam produktů je prázdný/);
+
+      $$('#list-empty button').find((b) => /ukázkovými/.test(b.textContent!))!.click();
+      expect($('#product-total').textContent).toBe('4 produkty');
+      const plus = $$('.product')[0].querySelectorAll<HTMLButtonElement>('.step')[1];
+      plus.click();
+      expect(summary()).toBe('1 štítek pro 1 produkt na 1 archu');
+      plus.click();
+      expect(summary()).toBe('2 štítky pro 1 produkt na 1 archu');
+
+      // the settings offer automatic (detected Czech), English and Czech
+      const select = $<HTMLSelectElement>('#language-select');
+      expect([...select.options].map((o) => o.textContent)).toEqual(['Automaticky (Čeština)', 'English', 'Čeština']);
+      expect(select.value).toBe('auto');
+
+      // switching to English is stored and reloads the page
+      const reload = vi.fn();
+      Object.defineProperty(window, 'location', { value: { ...window.location, reload }, configurable: true });
+      select.value = 'en';
+      select.dispatchEvent(new Event('change'));
+      expect(reload).toHaveBeenCalled();
+      await loadApp();
+      expect($('#products-title').textContent).toBe('Products');
+      expect(summary()).toBe('2 stickers of 1 product on 1 sheet');
+    } finally {
+      Object.defineProperty(navigator, 'languages', { value: ['en-US', 'en'], configurable: true });
+    }
+  });
 });

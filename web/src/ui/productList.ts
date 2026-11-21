@@ -2,11 +2,12 @@
 // to print for each product and a summary of the order.
 
 import { validateEan } from '../ean13.ts';
+import { t } from '../i18n.ts';
 import {
   clearCounts, findByEan, firstLine, oneLine, orderSummary, searchProducts, setCount, sortedProducts,
   type Product, type State, type Store,
 } from '../store.ts';
-import { byId, h, icon, plural } from './dom.ts';
+import { byId, h, icon } from './dom.ts';
 import { icons } from './icons.ts';
 
 export interface ProductListActions {
@@ -52,7 +53,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
       inputMode: 'numeric',
       placeholder: '0',
       class: 'count-input',
-      attrs: { 'aria-label': `Number of stickers: ${label}` },
+      attrs: { 'aria-label': t.countLabel(label) },
       on: {
         input: () => store.update((s) => setCount(s, p.id, Number(input.value))),
         focus: () => input.select(),
@@ -69,7 +70,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
       h('button', {
         type: 'button',
         class: 'product-main',
-        title: 'Edit product',
+        title: t.editProduct,
         on: { click: () => actions.editProduct(p) },
       },
       h('span', { class: 'product-name' },
@@ -81,7 +82,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
           type: 'button',
           class: 'step',
           tabIndex: -1,
-          attrs: { 'aria-label': `One less: ${label}` },
+          attrs: { 'aria-label': t.oneLess(label) },
           on: { click: () => changeCount(p.id, -1) },
         }, icon(icons.minus)),
         input,
@@ -89,7 +90,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
           type: 'button',
           class: 'step',
           tabIndex: -1,
-          attrs: { 'aria-label': `One more: ${label}` },
+          attrs: { 'aria-label': t.oneMore(label) },
           on: { click: () => changeCount(p.id, 1) },
         }, icon(icons.plus))));
     rows.set(p.id, { li, input });
@@ -108,8 +109,8 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
     syncCounts(state);
 
     total.textContent = visible.length === all.length
-      ? plural(all.length, 'product', 'products')
-      : `${visible.length} of ${all.length}`;
+      ? t.productCount(all.length)
+      : t.visibleOfTotal(visible.length, all.length);
 
     empty.hidden = visible.length > 0;
     if (visible.length === 0) empty.replaceChildren(...emptyContent(all.length, query));
@@ -118,18 +119,17 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
   function emptyContent(count: number, query: string): HTMLElement[] {
     if (count === 0) {
       return [
-        h('p', {}, h('strong', {}, 'Your product library is empty')),
-        h('p', { class: 'muted' },
-          'Add your products once. For each delivery, just set how many stickers to print.'),
+        h('p', {}, h('strong', {}, t.libraryEmpty)),
+        h('p', { class: 'muted' }, t.libraryEmptyHint),
         h('div', { class: 'buttons' },
           h('button', { type: 'button', class: 'btn primary', on: { click: () => actions.addProduct() } },
-            icon(icons.plus), 'Add product'),
+            icon(icons.plus), t.addProduct),
           ...actions.emptyLibraryActions()),
       ];
     }
     const result: HTMLElement[] = [];
     if (query) {
-      result.push(h('p', {}, `No products match “${query}”.`));
+      result.push(h('p', {}, t.noMatch(query)));
       const v = validateEan(query.replace(/\s/g, ''));
       if (v.ok && !findByEan(store.state, v.code)) {
         result.push(h('div', { class: 'buttons' },
@@ -137,10 +137,10 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
             type: 'button',
             class: 'btn',
             on: { click: () => actions.addProduct({ ean: v.code }) },
-          }, icon(icons.plus), `Add product ${v.code}`)));
+          }, icon(icons.plus), t.addProductWithEan(v.code))));
       }
     } else {
-      result.push(h('p', { class: 'muted' }, 'No products selected yet.'));
+      result.push(h('p', { class: 'muted' }, t.noneSelected));
     }
     return result;
   }
@@ -156,10 +156,10 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
       }
     }
     const { stickers, products, sheets } = orderSummary(state);
+    const text = t.orderSummary(stickers, products, sheets);
     summary.replaceChildren(stickers
-      ? h('span', {}, h('strong', {}, plural(stickers, 'sticker', 'stickers')),
-        ` of ${plural(products, 'product', 'products')} on ${plural(sheets, 'sheet', 'sheets')}`)
-      : h('span', { class: 'muted' }, 'No stickers selected'));
+      ? h('span', {}, h('strong', {}, text.stickers), text.rest)
+      : h('span', { class: 'muted' }, t.noStickersSelected));
     clearButton.disabled = stickers === 0;
   }
 
@@ -199,7 +199,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
         search.value = '';
         render();
         reveal(product.id);
-        showStatus(`+1 ${firstLine(product.description)} – now ${store.state.counts[product.id]}`);
+        showStatus(t.scanned(firstLine(product.description), store.state.counts[product.id]));
         return;
       }
       const v = validateEan(query);
@@ -225,7 +225,7 @@ export function setupProductList(store: Store, actions: ProductListActions): Pro
   onlySelected.addEventListener('change', render);
   clearButton.addEventListener('click', () => {
     const { stickers } = orderSummary(store.state);
-    if (confirm(`Clear the counts of all ${stickers} stickers?`)) {
+    if (confirm(t.confirmClearCounts(stickers))) {
       store.update(clearCounts);
       onlySelected.checked = false;
       render();

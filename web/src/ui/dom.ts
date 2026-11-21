@@ -62,7 +62,3 @@ export function debounce<A extends unknown[]>(fn: (...args: A) => void, ms: numb
     timer = setTimeout(() => fn(...args), ms);
   };
 }
-
-export function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
-}

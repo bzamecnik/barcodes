@@ -431,3 +431,14 @@ a { color: var(--accent); }
 @media (max-width: 560px) {
   #open-settings .label { display: none; }
 }
+
+.select {
+  align-self: flex-start;
+  min-width: 16em;
+  padding: 0.45em 0.6em;
+  font: inherit;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}

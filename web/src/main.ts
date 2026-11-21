@@ -1,3 +1,4 @@
+import { resolveLanguage, setLanguage, t, translatePage } from './i18n.ts';
 import { mergeProducts, Store } from './store.ts';
 import { byId, h, icon } from './ui/dom.ts';
 import { icons } from './ui/icons.ts';
@@ -27,16 +28,19 @@ function browserStorage(): Storage | null {
 const storage = browserStorage();
 const store = new Store(storage);
 
+setLanguage(resolveLanguage(store.state.settings.language));
+translatePage();
+
 const banner = byId('banner');
 function showBanner(text: string | null): void {
   banner.hidden = !text;
   banner.replaceChildren(...(text ? [icon(icons.alert), h('span', {}, text)] : []));
 }
 if (!storage) {
-  showBanner('This browser does not allow storing data for this page. Products will be lost when you close it.');
+  showBanner(t.storageUnavailable);
 }
 store.subscribe(() => {
-  if (store.saveError) showBanner(`Could not save the changes: ${store.saveError}`);
+  if (store.saveError) showBanner(t.saveFailed(store.saveError));
 });
 
 // Ask the browser not to evict the data under storage pressure. Browsers
@@ -50,7 +54,7 @@ function requestPersistentStorage(): void {
 store.subscribe(requestPersistentStorage);
 requestPersistentStorage();
 
-const settings = setupSettings(store);
+const settings = setupSettings(store, () => window.location.reload());
 const productDialog = setupProductDialog(store, (id, isNew) => list.reveal(id, isNew));
 
 const list = setupProductList(store, {
@@ -61,12 +65,12 @@ const list = setupProductList(store, {
       type: 'button',
       class: 'btn',
       on: { click: () => settings.open('products') },
-    }, 'Import CSV…'),
+    }, t.importCsvEllipsis),
     h('button', {
       type: 'button',
       class: 'btn',
       on: { click: () => store.update((s) => mergeProducts(s, SAMPLE_PRODUCTS).state) },
-    }, 'Try with sample products'),
+    }, t.trySample),
   ],
 });
 
@@ -74,11 +78,11 @@ setupPreview(store);
 setupStartPicker(store);
 
 const addButton = byId<HTMLButtonElement>('add-product');
-addButton.replaceChildren(icon(icons.plus), 'Add product');
+addButton.replaceChildren(icon(icons.plus), t.addProduct);
 addButton.addEventListener('click', () => productDialog.open());
 
 const settingsButton = byId<HTMLButtonElement>('open-settings');
-settingsButton.replaceChildren(icon(icons.settings), h('span', { class: 'label' }, 'Settings'));
+settingsButton.replaceChildren(icon(icons.settings), h('span', { class: 'label' }, t.settings));
 settingsButton.addEventListener('click', () => settings.open());
 
 // offline support (not in development, where it would get in the way)

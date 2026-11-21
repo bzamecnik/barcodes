@@ -2,6 +2,8 @@
 // (reportlab/graphics/barcode/eanbc.py) so that the output matches the
 // original Python implementation.
 
+import { t } from './i18n.ts';
+
 const LEFT_ODD = ['0001101', '0011001', '0010011', '0111101', '0100011',
   '0110001', '0101111', '0111011', '0110111', '0001011'];
 const LEFT_EVEN = ['0100111', '0110011', '0011011', '0100001', '0011101',
@@ -37,17 +39,17 @@ export type EanValidation =
 export function validateEan(input: string): EanValidation {
   const value = input.trim();
   if (!/^\d+$/.test(value)) {
-    return { ok: false, error: 'EAN must contain only digits' };
+    return { ok: false, error: t.eanNotDigits };
   }
   if (value.length === 12) {
     return { ok: true, code: value + checkDigit(value) };
   }
   if (value.length !== 13) {
-    return { ok: false, error: `EAN must have 13 digits (has ${value.length})` };
+    return { ok: false, error: t.eanWrongLength(value.length) };
   }
   const expected = checkDigit(value);
   if (value[12] !== expected) {
-    return { ok: false, error: `Wrong check digit: expected ${expected}, got ${value[12]}` };
+    return { ok: false, error: t.eanWrongCheckDigit(expected, value[12]) };
   }
   return { ok: true, code: value };
 }

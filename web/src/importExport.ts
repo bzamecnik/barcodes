@@ -1,6 +1,7 @@
 // Import and export of products (CSV) and of the whole library (JSON backup).
 
 import Papa from 'papaparse';
+import { t } from './i18n.ts';
 import {
   emptyState, mergeProducts, normalizeDescription, sortedProducts, type ProductInput, type State,
 } from './store.ts';
@@ -44,7 +45,7 @@ export function parseProductsCsv(text: string): CsvImport {
   });
   const errors: string[] = result.errors
     .filter((e) => e.code !== 'UndetectableDelimiter')
-    .map((e) => (e.row !== undefined ? `Row ${e.row + 2}: ${e.message}` : e.message));
+    .map((e) => (e.row !== undefined ? `${t.row(e.row + 2)}: ${e.message}` : e.message));
 
   const fields = result.meta.fields ?? [];
   const find = (key: keyof typeof COLUMNS) => fields.find((f) => COLUMNS[key].includes(f));
@@ -54,18 +55,18 @@ export function parseProductsCsv(text: string): CsvImport {
   if (!eanColumn || !descriptionColumn) {
     return {
       items: [],
-      errors: [`The CSV needs a header with the columns “ean” and “description”, found: ${fields.join(', ') || 'nothing'}`],
+      errors: [t.csvMissingColumns(fields.join(', '))],
     };
   }
 
   const items: CsvImport['items'] = [];
   result.data.forEach((row, i) => {
-    const source = `Row ${i + 2}`;
+    const source = t.row(i + 2);
     const ean = (row[eanColumn] ?? '').trim();
     const description = row[descriptionColumn] ?? '';
     if (!ean && !description.trim()) return;
     if (/^\d+([.,]\d+)?e\+?\d+$/i.test(ean)) {
-      errors.push(`${source}: the EAN “${ean}” was converted to a number by a spreadsheet; format the column as text`);
+      errors.push(`${source}: ${t.csvEanAsNumber(ean)}`);
       return;
     }
     const item: CsvImport['items'][number] = { ean, description, source };
@@ -73,7 +74,7 @@ export function parseProductsCsv(text: string): CsvImport {
       const raw = (row[countColumn] ?? '').trim();
       const count = Number(raw || 0);
       if (!Number.isInteger(count) || count < 0) {
-        errors.push(`${source}: invalid count “${raw}”`);
+        errors.push(`${source}: ${t.csvInvalidCount(raw)}`);
         return;
       }
       item.count = count;
@@ -128,18 +129,18 @@ export function parseBackup(text: string): Backup {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new BackupError('This is not a backup file (not valid JSON).');
+    throw new BackupError(t.backupNotJson);
   }
   const b = data as Partial<Backup>;
   if (!b || b.format !== BACKUP_FORMAT || !Array.isArray(b.products)) {
-    throw new BackupError('This is not a backup file of this app.');
+    throw new BackupError(t.backupWrongFormat);
   }
   if (b.version !== 1) {
-    throw new BackupError(`Unsupported backup version ${b.version}. Is the app up to date?`);
+    throw new BackupError(t.backupWrongVersion(b.version));
   }
   const logo = b.settings?.logo;
   if (logo !== null && logo !== undefined && !/^data:image\/(png|jpeg);base64,/.test(logo)) {
-    throw new BackupError('The logo in the backup is not a PNG or JPEG image.');
+    throw new BackupError(t.backupBadLogo);
   }
   return b as Backup;
 }
@@ -162,7 +163,7 @@ export function restoreBackup(state: State, backup: Backup): { state: State; err
     ean: String(p.ean ?? ''),
     description: normalizeDescription(String(p.description ?? '')),
     count: Number(p.count) || 0,
-    source: `Product ${i + 1}`,
+    source: t.productNumber(i + 1),
   }));
   const result = mergeProducts(base, items);
   const now = new Date().toISOString();

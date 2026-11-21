@@ -2,6 +2,7 @@
 // EAN and of how the description fits on a sticker.
 
 import { checkDigit, validateEan } from '../ean13.ts';
+import { t } from '../i18n.ts';
 import { descriptionWarnings } from '../labels.ts';
 import {
   addProduct, deleteProduct, findByEan, firstLine, ProductError, updateProduct,
@@ -35,24 +36,24 @@ export function setupProductDialog(
     if (!value) {
       text = '';
     } else if (!/^\d+$/.test(value)) {
-      text = 'Only digits, please.';
+      text = t.eanOnlyDigits;
       kind = 'error';
     } else if (value.length < 12) {
-      text = `${value.length} of 13 digits`;
+      text = t.eanDigitsSoFar(value.length);
     } else if (value.length === 12) {
-      text = `The check digit ${checkDigit(value)} will be added.`;
+      text = t.eanCheckDigitAdded(checkDigit(value));
     } else {
       const v = validateEan(value);
       if (!v.ok) {
-        text = `Wrong check digit (should be ${checkDigit(value)}). Is there a typo?`;
+        text = t.eanWrongCheckDigitHint(checkDigit(value));
         kind = 'error';
       } else {
         const other = findByEan(store.state, value);
         if (other && other.id !== editing?.id) {
-          text = `Already in the library: ${firstLine(other.description)}`;
+          text = t.eanAlreadyInLibrary(firstLine(other.description));
           kind = 'error';
         } else {
-          text = 'Valid EAN-13 ✓';
+          text = t.eanValid;
           kind = 'ok';
         }
       }
@@ -68,7 +69,7 @@ export function setupProductDialog(
 
   function open(product: Product | null = null, prefill: { ean?: string } = {}): void {
     editing = product;
-    title.textContent = product ? 'Edit product' : 'Add product';
+    title.textContent = product ? t.editProductTitle : t.addProductTitle;
     ean.value = product?.ean ?? prefill.ean ?? '';
     description.value = product?.description ?? '';
     deleteButton.hidden = !product;
@@ -112,7 +113,7 @@ export function setupProductDialog(
   deleteButton.addEventListener('click', () => {
     if (!editing) return;
     const id = editing.id;
-    if (confirm(`Delete “${firstLine(editing.description)}” (${editing.ean})?`)) {
+    if (confirm(t.confirmDelete(firstLine(editing.description), editing.ean))) {
       store.update((s) => deleteProduct(s, id));
       dialog.close();
     }

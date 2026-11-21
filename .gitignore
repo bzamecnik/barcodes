@@ -130,4 +130,8 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# macOS
+.DS_Store
+
 barcodes.db

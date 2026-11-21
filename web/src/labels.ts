@@ -87,6 +87,57 @@ export function unsupportedChars(text: string): string[] {
   return [...result];
 }
 
+/** Helvetica descent (207/1000 em) */
+const FONT_DESCENT = 0.207 * FONT_SIZE;
+/** keep text this far from the sticker edges (cutting tolerance) */
+const EDGE_MARGIN = 1 * MM;
+const MAX_TEXT_WIDTH = LABEL_WIDTH - TEXT_X - EDGE_MARGIN;
+
+/** Baseline of the first description line, relative to the sticker bottom. */
+function firstBaseline(hasLogo: boolean): number {
+  const codeY = (LABEL_HEIGHT - CODE_HEIGHT) / 2;
+  return hasLogo
+    ? LABEL_HEIGHT - LOGO_BOX_HEIGHT - codeY - 5 * MM
+    : codeY + BAR_HEIGHT - FONT_ASCENT;
+}
+
+/** How many description lines fit above the bottom edge of a sticker. */
+export function maxDescriptionLines(hasLogo: boolean): number {
+  return Math.floor((firstBaseline(hasLogo) - FONT_DESCENT - EDGE_MARGIN) / LEADING) + 1;
+}
+
+let measureDoc: jsPDF | null = null;
+
+/** Width of a description line in points. */
+export function textWidth(line: string): number {
+  if (!measureDoc) {
+    measureDoc = new jsPDF({ unit: 'pt' });
+    measureDoc.setFont('helvetica', 'normal');
+    measureDoc.setFontSize(FONT_SIZE);
+  }
+  return measureDoc.getTextWidth(line);
+}
+
+/** Problems with how a description would be printed on a sticker. */
+export function descriptionWarnings(description: string, hasLogo: boolean): string[] {
+  const warnings: string[] = [];
+  const bad = unsupportedChars(description);
+  if (bad.length) {
+    warnings.push(`These characters can't be printed and would be garbled: ${bad.join(' ')}`);
+  }
+  const lines = descriptionLines(description);
+  const maxLines = maxDescriptionLines(hasLogo);
+  if (lines.length > maxLines) {
+    warnings.push(`Only ${maxLines} lines fit on a sticker${hasLogo ? ' with a logo' : ''}, this has ${lines.length}.`);
+  }
+  for (const line of lines) {
+    if (textWidth(line) > MAX_TEXT_WIDTH) {
+      warnings.push(`Line "${line}" is too long and would be cut off.`);
+    }
+  }
+  return warnings;
+}
+
 /**
  * Generate a PDF with barcode stickers. Labels with an empty EAN leave an
  * empty space on the sheet. Throws on invalid EANs.

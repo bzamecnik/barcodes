@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { descriptionLines, expandCounts, generatePdf, unsupportedChars } from '../src/labels.ts';
+import {
+  descriptionLines, descriptionWarnings, expandCounts, generatePdf, maxDescriptionLines, unsupportedChars,
+} from '../src/labels.ts';
 
 describe('expandCounts', () => {
   it('repeats each product count times', () => {
@@ -35,5 +37,27 @@ describe('generatePdf', () => {
   });
   it('rejects an invalid EAN', () => {
     expect(() => generatePdf([{ ean: '8594199700122', description: '' }])).toThrow(/check digit/);
+  });
+});
+
+describe('descriptionWarnings', () => {
+  it('accepts the typical descriptions', () => {
+    const d = '3DXTECH\nCARBONX\nCarbon Fiber Nylon\n1.75 mm 0.5 kg';
+    expect(descriptionWarnings(d, true)).toEqual([]);
+    expect(descriptionWarnings(d, false)).toEqual([]);
+  });
+  it('limits the number of lines, fewer with a logo', () => {
+    expect(maxDescriptionLines(true)).toBe(5);
+    expect(maxDescriptionLines(false)).toBe(8);
+    expect(descriptionWarnings('1\n2\n3\n4\n5\n6', true)).toHaveLength(1);
+    expect(descriptionWarnings('1\n2\n3\n4\n5\n6', false)).toEqual([]);
+  });
+  it('reports lines too long for the sticker', () => {
+    const w = descriptionWarnings('Carbon Fiber Reinforced Nylon 12', false);
+    expect(w).toHaveLength(1);
+    expect(w[0]).toMatch(/too long/);
+  });
+  it('reports unsupported characters', () => {
+    expect(descriptionWarnings('Černá', false)[0]).toMatch(/Č/);
   });
 });

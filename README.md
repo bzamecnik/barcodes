@@ -6,6 +6,22 @@ It lays out up to 21 (8x3) stickers of size 70x36 mm per each A4 page.
 
 There can be an EAN13 code, up to 4 lines of short description and a logo.
 
+## Web version (work in progress)
+
+A rewrite that runs entirely in the browser (TypeScript, jsPDF) lives in
+[`web/`](web/). It produces the same PDF layout as the Python version and is
+deployed to GitHub Pages by `.github/workflows/pages.yml`.
+
+```shell
+cd web
+npm install
+npm run dev     # local dev server
+npm test        # unit tests
+npm run build   # static site in web/dist
+# render a PDF from a CSV without a browser (to compare with the Python output):
+node scripts/render-pdf.ts ../products.csv labels.pdf --logo ../barcodes/logo.png
+```
+
 ## Installation (macOS)
 
 The easiest way is [uv](https://docs.astral.sh/uv/), which also takes care of

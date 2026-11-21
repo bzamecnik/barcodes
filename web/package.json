@@ -1,0 +1,24 @@
+{
+  "name": "barcodes-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Generate product barcode stickers to PDF, in the browser.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "render": "node scripts/render-pdf.ts"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

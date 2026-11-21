@@ -28,6 +28,8 @@ set how many stickers you need for each product, check the preview and print.
   the app is installed (Chrome/Edge: install icon in the address bar; Safari on
   Mac: File → Add to Dock; iOS: Share → Add to Home Screen). Installed, it also
   works offline.
+- **Language:** English or Czech, chosen by the browser's preferred languages
+  (Slovak gets Czech too); it can be changed in Settings.
 - **CSV import/export:** columns `ean`, `description` and optionally `count`;
   comma or semicolon separated. To move from the Python web app, use its
   "Export to CSV" and import the file in Settings.
@@ -68,6 +70,13 @@ node scripts/render-pdf.ts ../products.csv labels.pdf --logo ../barcodes/logo.pn
 - **localStorage** rather than IndexedDB: the data is small (products and a
   logo of at most a few hundred kB), a synchronous API keeps the code simple
   and both have the same eviction rules. A backup file is the safety net.
+- **Translations** (`src/i18n.ts`) without a library: one typed dictionary per
+  language, so TypeScript reports any missing Czech string. Plurals use
+  `Intl.PluralRules` (Czech: 1 štítek, 2 štítky, 5 štítků). Static texts in
+  `index.html` are marked with `data-i18n` attributes. Changing the language
+  reloads the page rather than re-rendering everything live, as it's rare.
+  The PDF has no texts to translate; CSV column names stay English for
+  compatibility with the `barcodes` command (Czech ones are accepted on import).
 - **No UI framework:** the UI is small, plain TypeScript with a tiny DOM
   helper (`src/ui/dom.ts`) is enough and keeps the dependencies minimal.
 - **Hand-written service worker** (`public/sw.js`, network first) rather than a

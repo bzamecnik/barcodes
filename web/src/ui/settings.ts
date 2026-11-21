@@ -4,8 +4,11 @@
 import {
   BackupError, createBackup, decodeText, parseBackup, parseProductsCsv, productsToCsv, restoreBackup,
 } from '../importExport.ts';
+import {
+  browserLanguages, detectLanguage, LANGUAGES, languageName, t, type LanguageSetting,
+} from '../i18n.ts';
 import { mergeProducts, type State, type Store } from '../store.ts';
-import { byId, h, plural } from './dom.ts';
+import { byId, h } from './dom.ts';
 
 /** Logos larger than this (in pixels) are scaled down to keep storage and PDFs small. */
 const LOGO_MAX_WIDTH = 1200;
@@ -47,7 +50,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('This file is not an image the browser can read.'));
+    img.onerror = () => reject(new Error(t.notAnImage));
     img.src = src;
   });
 }
@@ -73,7 +76,7 @@ async function readLogo(file: File): Promise<string> {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  return new Date(iso).toLocaleDateString(t.locale, { dateStyle: 'medium' });
 }
 
 function resultList(summary: string, errors: string[], kind: 'ok' | 'error' = 'ok'): HTMLElement[] {
@@ -81,13 +84,14 @@ function resultList(summary: string, errors: string[], kind: 'ok' | 'error' = 'o
   const result: HTMLElement[] = [h('p', { class: kind }, summary)];
   if (shown.length) result.push(h('ul', { class: 'warnings' }, ...shown.map((e) => h('li', {}, e))));
   if (errors.length > shown.length) {
-    result.push(h('p', { class: 'small muted' }, `…and ${errors.length - shown.length} more`));
+    result.push(h('p', { class: 'small muted' }, t.andMore(errors.length - shown.length)));
   }
   return result;
 }
 
-export function setupSettings(store: Store): Settings {
+export function setupSettings(store: Store, onLanguageChange: () => void): Settings {
   const dialog = byId<HTMLDialogElement>('settings-dialog');
+  const languageSelect = byId<HTMLSelectElement>('language-select');
   const logoPreview = byId('logo-preview');
   const logoFile = byId<HTMLInputElement>('logo-file');
   const logoRemove = byId<HTMLButtonElement>('logo-remove');
@@ -104,16 +108,16 @@ export function setupSettings(store: Store): Settings {
   function renderLogo(state: State): void {
     const { logo, logoName } = state.settings;
     logoPreview.replaceChildren(logo
-      ? h('img', { src: logo, alt: logoName ? `Logo: ${logoName}` : 'Logo' })
-      : h('span', { class: 'muted' }, 'No logo'));
+      ? h('img', { src: logo, alt: logoName ? t.logoAlt(logoName) : t.logo })
+      : h('span', { class: 'muted' }, t.noLogo));
     logoRemove.hidden = !logo;
   }
 
   function renderBackupStatus(state: State): void {
     const { lastBackup, lastChange, products } = state;
     backupStatus.textContent = lastBackup
-      ? `Last backup: ${formatDate(lastBackup)}${lastChange && lastChange > lastBackup ? ' (there are changes since)' : ''}.`
-      : products.length ? 'Not backed up yet.' : '';
+      ? t.lastBackup(formatDate(lastBackup), !!lastChange && lastChange > lastBackup)
+      : products.length ? t.notBackedUp : '';
 
     const unsaved = !!lastChange && (!lastBackup || lastChange > lastBackup);
     const ageDays = lastBackup ? (Date.now() - Date.parse(lastBackup)) / 86_400_000 : Infinity;
@@ -167,20 +171,15 @@ export function setupSettings(store: Store): Settings {
     if (!file) return;
     const parsed = parseProductsCsv(decodeText(await file.arrayBuffer()));
     if (!parsed.items.length) {
-      importResult.replaceChildren(...resultList('Nothing was imported.', parsed.errors, 'error'));
+      importResult.replaceChildren(...resultList(t.nothingImported, parsed.errors, 'error'));
       return;
     }
     const result = mergeProducts(store.state, parsed.items);
     store.set(result.state);
     const errors = [...parsed.errors, ...result.errors];
-    const parts = [
-      result.added && `${plural(result.added, 'new product', 'new products')}`,
-      result.updated && `${result.updated} updated`,
-      result.unchanged && `${result.unchanged} unchanged`,
-    ].filter(Boolean);
     importResult.replaceChildren(...resultList(
-      `Imported from ${file.name}: ${parts.join(', ') || 'nothing'}.` +
-      (errors.length ? ` ${plural(errors.length, 'row was', 'rows were')} skipped:` : ''),
+      t.imported(file.name, result.added, result.updated, result.unchanged) +
+      (errors.length ? t.rowsSkipped(errors.length) : ''),
       errors));
   });
 
@@ -197,16 +196,13 @@ export function setupSettings(store: Store): Settings {
     try {
       const data = parseBackup(await file.text());
       const current = store.state.products.length;
-      if (current && !confirm(
-        `Replace your ${plural(current, 'product', 'products')} with ` +
-        `${plural(data.products.length, 'product', 'products')} from the backup of ${formatDate(data.exportedAt)}?`)) {
+      if (current && !confirm(t.confirmRestore(current, data.products.length, formatDate(data.exportedAt)))) {
         return;
       }
       const result = restoreBackup(store.state, data);
       store.set(result.state);
       restoreResult.replaceChildren(...resultList(
-        `Restored ${plural(result.state.products.length, 'product', 'products')}` +
-        (result.errors.length ? `, ${plural(result.errors.length, 'product was', 'products were')} skipped:` : '.'),
+        t.restored(result.state.products.length, result.errors.length),
         result.errors));
     } catch (e) {
       if (!(e instanceof BackupError)) throw e;
@@ -217,6 +213,18 @@ export function setupSettings(store: Store): Settings {
   for (const button of dialog.querySelectorAll('[data-close]')) {
     button.addEventListener('click', () => dialog.close());
   }
+
+  // language: changing it reloads the page, which renders everything anew
+  const detected = languageName(detectLanguage(browserLanguages()));
+  languageSelect.replaceChildren(
+    h('option', { value: 'auto' }, t.languageAuto(detected)),
+    ...LANGUAGES.map((lang) => h('option', { value: lang, lang }, languageName(lang))));
+  languageSelect.value = store.state.settings.language;
+  languageSelect.addEventListener('change', () => {
+    const language = languageSelect.value as LanguageSetting;
+    store.update((s) => ({ ...s, settings: { ...s.settings, language } }));
+    onLanguageChange();
+  });
 
   byId('backup-banner-now').addEventListener('click', backup);
   byId('backup-banner-later').addEventListener('click', () => {

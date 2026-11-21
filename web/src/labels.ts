@@ -5,6 +5,7 @@
 
 import { jsPDF } from 'jspdf';
 import { bars, QUIET_MODULES, validateEan } from './ean13.ts';
+import { t } from './i18n.ts';
 
 const MM = 72 / 25.4;
 
@@ -123,16 +124,16 @@ export function descriptionWarnings(description: string, hasLogo: boolean): stri
   const warnings: string[] = [];
   const bad = unsupportedChars(description);
   if (bad.length) {
-    warnings.push(`These characters can't be printed and would be garbled: ${bad.join(' ')}`);
+    warnings.push(t.unprintableChars(bad.join(' ')));
   }
   const lines = descriptionLines(description);
   const maxLines = maxDescriptionLines(hasLogo);
   if (lines.length > maxLines) {
-    warnings.push(`Only ${maxLines} lines fit on a sticker${hasLogo ? ' with a logo' : ''}, this has ${lines.length}.`);
+    warnings.push(t.tooManyLines(maxLines, lines.length, hasLogo));
   }
   for (const line of lines) {
     if (textWidth(line) > MAX_TEXT_WIDTH) {
-      warnings.push(`Line "${line}" is too long and would be cut off.`);
+      warnings.push(t.lineTooLong(line));
     }
   }
   return warnings;
@@ -176,7 +177,7 @@ export function generatePdf(labels: Label[], options: LayoutOptions = {}): jsPDF
     }
     const validation = validateEan(label.ean);
     if (!validation.ok) {
-      throw new Error(`Invalid EAN "${label.ean}": ${validation.error}`);
+      throw new Error(t.invalidEan(label.ean, validation.error));
     }
     const code = validation.code;
 

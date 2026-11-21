@@ -80,3 +80,8 @@ addButton.addEventListener('click', () => productDialog.open());
 const settingsButton = byId<HTMLButtonElement>('open-settings');
 settingsButton.replaceChildren(icon(icons.settings), h('span', { class: 'label' }, 'Settings'));
 settingsButton.addEventListener('click', () => settings.open());
+
+// offline support (not in development, where it would get in the way)
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker not registered', e));
+}

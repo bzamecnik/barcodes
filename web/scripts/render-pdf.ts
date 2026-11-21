@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { parseCsvRecords } from '../src/csv.ts';
+import { decodeText, parseProductsCsv } from '../src/importExport.ts';
 import { expandCounts, generatePdf } from '../src/labels.ts';
 
 const { values, positionals } = parseArgs({
@@ -21,11 +21,12 @@ if (!csvPath || !pdfPath) {
   process.exit(1);
 }
 
-const products = parseCsvRecords(readFileSync(csvPath, 'utf8')).map((r) => ({
-  ean: r.ean ?? '',
-  description: r.description ?? '',
-  count: Number(r.count || 0),
-}));
+const { items, errors } = parseProductsCsv(decodeText(readFileSync(csvPath)));
+if (errors.length) {
+  console.error(errors.join('\n'));
+  process.exit(1);
+}
+const products = items.map((p) => ({ ...p, count: p.count ?? 1 }));
 const logo = values.logo ? { data: new Uint8Array(readFileSync(values.logo)) } : null;
 const doc = generatePdf(expandCounts(products), { logo, showBorder: values.border });
 writeFileSync(pdfPath, Buffer.from(doc.output('arraybuffer')));

@@ -46,6 +46,28 @@ npm run build   # static site in web/dist
 node scripts/render-pdf.ts ../products.csv labels.pdf --logo ../barcodes/logo.png
 ```
 
+### Releasing
+
+Every push to `main` that changes `web/` is deployed to GitHub Pages, so a
+release only marks a version. The version is in `web/package.json` and twice
+in `web/package-lock.json` (the top-level `version` and `packages[""]`).
+Change it with `npm version`, which updates all three:
+
+```shell
+cd web
+npm version 0.3.0 --no-git-tag-version   # or: patch / minor / major
+git commit -am "Bump the web app version to 0.3.0."
+```
+
+`--no-git-tag-version` stops npm from committing and tagging by itself: it
+would make a tag `v0.3.0`, but `v*` tags belong to the Python package. Tag the
+web app as `web-v*` after merging to `main`:
+
+```shell
+git tag web-v0.3.0
+git push origin main web-v0.3.0
+```
+
 ### Design decisions
 
 - **Own EAN-13 encoder** (`src/ean13.ts`, ~60 lines ported from reportlab)

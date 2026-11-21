@@ -105,7 +105,7 @@ docker run --rm -it -p 5000:5000 -v barcodes-db:/data barcodes
 Building, publishing and running for production.
 
 ```shell
-VERSION=0.2.0
+VERSION=0.3.0
 docker build . -t bzamecnik/barcodes:$VERSION
 docker push bzamecnik/barcodes:$VERSION
 

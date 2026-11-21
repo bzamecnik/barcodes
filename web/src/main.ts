@@ -4,6 +4,7 @@ import { icons } from './ui/icons.ts';
 import { setupPreview, setupStartPicker } from './ui/preview.ts';
 import { setupProductDialog } from './ui/productDialog.ts';
 import { setupProductList } from './ui/productList.ts';
+import { setupSettings } from './ui/settings.ts';
 
 const SAMPLE_PRODUCTS = [
   { ean: '8594199700121', description: '3DXTECH\n3DXSTAT\nESD PLA\n1.75 mm 1 kg' },
@@ -38,12 +39,29 @@ store.subscribe(() => {
   if (store.saveError) showBanner(`Could not save the changes: ${store.saveError}`);
 });
 
+// Ask the browser not to evict the data under storage pressure. Browsers
+// grant it e.g. for installed apps or frequently used sites.
+let persistRequested = false;
+function requestPersistentStorage(): void {
+  if (persistRequested || !store.state.products.length) return;
+  persistRequested = true;
+  navigator.storage?.persist?.().catch(() => {});
+}
+store.subscribe(requestPersistentStorage);
+requestPersistentStorage();
+
+const settings = setupSettings(store);
 const productDialog = setupProductDialog(store, (id, isNew) => list.reveal(id, isNew));
 
 const list = setupProductList(store, {
   addProduct: (prefill) => productDialog.open(null, prefill),
   editProduct: (product) => productDialog.open(product),
   emptyLibraryActions: () => [
+    h('button', {
+      type: 'button',
+      class: 'btn',
+      on: { click: () => settings.open('products') },
+    }, 'Import CSV…'),
     h('button', {
       type: 'button',
       class: 'btn',
@@ -58,3 +76,7 @@ setupStartPicker(store);
 const addButton = byId<HTMLButtonElement>('add-product');
 addButton.replaceChildren(icon(icons.plus), 'Add product');
 addButton.addEventListener('click', () => productDialog.open());
+
+const settingsButton = byId<HTMLButtonElement>('open-settings');
+settingsButton.replaceChildren(icon(icons.settings), h('span', { class: 'label' }, 'Settings'));
+settingsButton.addEventListener('click', () => settings.open());

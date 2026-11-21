@@ -397,3 +397,37 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
 .warnings { margin: 0; padding-left: 1.2em; font-weight: 400; font-size: 0.9rem; color: var(--warning); }
 .warnings:empty { display: none; }
 p.error:empty { display: none; }
+
+/* --- settings --- */
+
+.dialog-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#settings-dialog { width: min(600px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
+.settings-section { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.settings-section h3 { margin: 0; font-size: 1rem; }
+.settings-section ul { margin: 0; padding-left: 1.2em; }
+.small { font-size: 0.85rem; }
+code { font: 0.9em ui-monospace, 'SF Mono', Menlo, Consolas, monospace; padding: 0.05em 0.3em; background: var(--surface-2); border-radius: 4px; }
+a { color: var(--accent); }
+
+.logo-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.logo-preview {
+  display: grid;
+  place-items: center;
+  /* the logo box on the sticker is 23.3 x 7 mm */
+  width: 200px;
+  aspect-ratio: 400 / 120;
+  padding: 6px;
+  background: #fff;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.result:empty { display: none; }
+.result p.ok { color: var(--ok); }
+.result p.error { color: var(--error); }
+
+@media (max-width: 560px) {
+  #open-settings .label { display: none; }
+}

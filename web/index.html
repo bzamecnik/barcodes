@@ -18,11 +18,17 @@
         <h1>Barcodes</h1>
       </div>
       <div class="header-actions">
+        <button id="open-settings" type="button" class="btn subtle" aria-label="Settings and data"></button>
         <button id="add-product" type="button" class="btn primary"></button>
       </div>
     </header>
 
     <div id="banner" class="banner" role="alert" hidden></div>
+    <div id="backup-banner" class="banner" hidden>
+      <span>Your products are saved only in this browser. Back them up to a file in case browser data gets cleared.</span>
+      <button id="backup-banner-now" type="button" class="btn">Back up now</button>
+      <button id="backup-banner-later" type="button" class="btn subtle">Later</button>
+    </div>
 
     <main class="layout">
       <section class="panel products" aria-labelledby="products-title">
@@ -102,6 +108,68 @@
           <button type="submit" class="btn primary">Save</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title">
+      <div class="dialog-body">
+        <div class="dialog-title-row">
+          <h2 id="settings-title">Settings &amp; data</h2>
+          <button type="button" class="btn subtle" data-close>Close</button>
+        </div>
+
+        <section class="settings-section">
+          <h3>Logo</h3>
+          <p class="muted">Printed on every sticker above the description. Optional.</p>
+          <div class="logo-row">
+            <div id="logo-preview" class="logo-preview"></div>
+            <div class="buttons">
+              <label class="btn">Choose image…<input id="logo-file" type="file" accept="image/*" hidden /></label>
+              <button id="logo-remove" type="button" class="btn subtle">Remove</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings-products" class="settings-section">
+          <h3>Import &amp; export products</h3>
+          <p class="muted">
+            CSV file with the columns <code>ean</code>, <code>description</code> and optionally <code>count</code>.
+            Products with an EAN that's already in the list are updated.
+          </p>
+          <div class="buttons">
+            <label class="btn">Import CSV…<input id="csv-file" type="file" accept=".csv,.txt,text/csv,text/plain" hidden /></label>
+            <button id="csv-export" type="button" class="btn">Export CSV</button>
+          </div>
+          <div id="import-result" class="result" role="status"></div>
+        </section>
+
+        <section class="settings-section">
+          <h3>Backup</h3>
+          <p class="muted">
+            Products and the logo are stored only in this browser on this device. Keep a backup file
+            in case the browser data gets cleared, or to move to another computer.
+          </p>
+          <div class="buttons">
+            <button id="backup-export" type="button" class="btn primary">Back up to a file</button>
+            <label class="btn">Restore from backup…<input id="backup-file" type="file" accept=".json,application/json" hidden /></label>
+          </div>
+          <p id="backup-status" class="small muted"></p>
+          <div id="restore-result" class="result" role="status"></div>
+        </section>
+
+        <section class="settings-section">
+          <h3>Install as an app</h3>
+          <p class="muted">Then it opens in its own window, works offline and the browser keeps its data more reliably.</p>
+          <ul class="muted small">
+            <li><strong>Chrome, Edge:</strong> the install icon at the right of the address bar.</li>
+            <li><strong>Safari on Mac:</strong> File → Add to Dock.</li>
+            <li><strong>iPhone, iPad:</strong> Share → Add to Home Screen.</li>
+          </ul>
+        </section>
+
+        <p class="small muted">
+          Barcodes is open source: <a href="https://github.com/bzamecnik/barcodes" target="_blank" rel="noopener">github.com/bzamecnik/barcodes</a>
+        </p>
+      </div>
     </dialog>
 
     <script type="module" src="./src/main.ts"></script>

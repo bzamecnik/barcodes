@@ -174,4 +174,54 @@ describe('app', () => {
     expect(summaryEl.textContent).toBe('Start at 7');
     expect($$('.sheet-cell.used')).toHaveLength(6);
   });
+
+  it('imports a CSV, reminds to back up, backs up and restores', async () => {
+    await loadApp();
+    const chooseFile = (id: string, name: string, content: string) => {
+      const input = $<HTMLInputElement>(id);
+      Object.defineProperty(input, 'files', { value: [new File([content], name)], configurable: true });
+      input.dispatchEvent(new Event('change'));
+      return new Promise((r) => setTimeout(r, 50));
+    };
+    const downloads: Blob[] = [];
+    URL.createObjectURL = (blob: Blob) => {
+      downloads.push(blob);
+      return 'blob:test';
+    };
+    expect($('#backup-banner').hidden).toBe(true);
+
+    // the empty library offers the import
+    $$('#list-empty button').find((b) => /Import CSV/.test(b.textContent!))!.click();
+    expect($<HTMLDialogElement>('#settings-dialog').open).toBe(true);
+
+    await chooseFile('#csv-file', 'products.csv',
+      'Kód;Popis;Počet\n8594199700121;"3DXTECH\n3DXSTAT";5\n8594199700138;B;\n8594199700220;C;0\n123;bad;1\n');
+    expect($('#import-result').textContent).toMatch(/Imported from products.csv: 3 new products\. 1 row was skipped:.*13 digits/);
+    expect(rowNames()).toEqual(['3DXTECH', 'B', 'C']);
+    expect(summary()).toBe('5 stickers of 1 product on 1 sheet');
+
+    // 3 products not backed up yet
+    expect($('#backup-banner').hidden).toBe(false);
+    expect($('#backup-status').textContent).toBe('Not backed up yet.');
+    $<HTMLButtonElement>('#backup-banner-now').click();
+    expect($('#backup-banner').hidden).toBe(true);
+    expect($('#backup-status').textContent).toMatch(/^Last backup: /);
+    const backup = await downloads.at(-1)!.text();
+    expect(JSON.parse(backup)).toMatchObject({ format: 'barcodes-backup', products: [{ ean: '8594199700121', count: 5 }, {}, {}] });
+
+    // CSV export
+    $<HTMLButtonElement>('#csv-export').click();
+    expect(await downloads.at(-1)!.text()).toMatch(/^ean,description,count\n8594199700121,"3DXTECH\n3DXSTAT",5\n/);
+
+    // restore into a changed library
+    $<HTMLButtonElement>('.product-main').click();
+    $<HTMLButtonElement>('#product-delete').click();
+    expect(rowNames()).toEqual(['B', 'C']);
+    await chooseFile('#backup-file', 'backup.json', backup);
+    expect($('#restore-result').textContent).toBe('Restored 3 products.');
+    expect(rowNames()).toEqual(['3DXTECH', 'B', 'C']);
+
+    await chooseFile('#backup-file', 'other.json', '{"x": 1}');
+    expect($('#restore-result').textContent).toMatch(/not a backup file/);
+  });
 });
